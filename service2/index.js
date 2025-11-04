@@ -28,16 +28,16 @@
 // }
 
 // connectDB();
-const {client,connectDB} = require('./db/connectDb');
-connectDB();
-
+// const {client,connectDB} = require('./db/connectDb');
+// connectDB();
+const {addUser} = require('./model/userModel')
 
 
 const { WebSocketServer }  = require('ws');
 
 // Create a WebSocket server on port 8080
 const wss = new WebSocketServer({ port: 8080 });
-  
+
 wss.on('connection', ws => {
   console.log('✅ Client connected');
 
@@ -45,14 +45,18 @@ wss.on('connection', ws => {
   ws.send(JSON.stringify({ message: 'Hello from server 👋' }));
 
   // When the client (Postman) sends a message
-  ws.on('message', message => {
+  ws.on('message', async message => {
+    const msg = JSON.parse(message.toString())
     console.log('📩 Received from client:', message.toString());
-
+    
+    const user = await addUser(msg.name,msg.username,msg.password);
+    console.log("user" + user);
+    
+    // const user = await addUser(message.name,message.username,message.password);
+    // console.log(user);
+    
     // Respond back to Postman
-    ws.send(JSON.stringify({
-      reply: 'Message received successfully!',
-      yourMessage: message.toString()
-    }));
+    ws.send(JSON.stringify(user));
   });
 
   // Handle disconnection

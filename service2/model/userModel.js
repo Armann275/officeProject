@@ -19,9 +19,10 @@ async function createUsersTable() {
 }
 
 async function addUser(name, username,password) {
-  const hashPassword = await bcrypt.hash(password,10);  
+  try {
+     const hashPassword = await bcrypt.hash(password,10);  
     
-    
+  
   const query = `
     INSERT INTO users (name, username, password)
     VALUES ($1, $2, $3)
@@ -39,6 +40,17 @@ async function addUser(name, username,password) {
   
   
   return {user:res.rows[0], token:token};
+  } catch (error) {
+     // Check if it’s the “duplicate username” error
+    if (error.code === '23505') { // PostgreSQL unique_violation code
+      console.error('❌ Duplicate username:', username);
+      return { error: 'Username already exists. Please choose another one.' };
+    }
+
+    // Catch-all for other errors
+    console.error('❌ Error adding user:', error);
+    return { error: 'Failed to create user. Please try again.' };
+  }
 }
 
 async function getAllUsers() {
@@ -57,9 +69,10 @@ async function getAllUsers() {
 // })
 
 
-addUser("artak","artak123s","poker123").then((res) => {
-    console.log(res);
-});
+// addUser("artak","artak123s","poker123").then((res) => {
+//     console.log(res);
+// });
 // getAllUsers().then((res) => {
 //     console.log(res);
 // })
+module.exports = {addUser}
