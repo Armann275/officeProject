@@ -6,6 +6,8 @@ const EXCHANGE = 'users_topic_exchange';
 const QUEUE = 'user_actions_queue';
 const ROUTING_PATTERN = 'user.*'; // Matches user.add, user.read, user.delete
 
+const EXCHANGE2 = "response"
+const {handler} = require('../handlers/handler');
 // const handlers = require('./services/handler');
 
 async function consumeUsers() {
@@ -20,7 +22,7 @@ async function consumeUsers() {
 
   channel.consume(QUEUE, async (msg) => {
     console.log(JSON.parse(msg.content.toString()));
-    return
+    
     
     if (!msg) return;
 
@@ -28,11 +30,19 @@ async function consumeUsers() {
     const data = JSON.parse(msg.content.toString());
 
     console.log(`📩 Received [${routingKey}]:`, data);
-
-    const handler = handlers[routingKey];
-    if (handler) {
+    console.log(routingKey);
+    
+    const handlerr = handler[routingKey];
+    console.log(handlerr);
+    
+    if (handlerr) {
       try {
-        await handler(data, channel);
+       const user = await handlerr(data);
+       console.log(user);
+        await channel.assertExchange(EXCHANGE2, 'topic', { durable: true });
+
+        channel.publish(EXCHANGE2, `response.${routingKey}`, Buffer.from(JSON.stringify(user)), { persistent: true });
+        
       } catch (err) {
         console.error(`❌ Error handling ${routingKey}:`, err);
       }
